@@ -1,0 +1,66 @@
+version: '3'
+
+services: 
+  apache:
+    build: ./apache
+    restart: always
+    ports: 
+      - 80:80
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - mariadb
+
+  mariadb:
+    image: mariadb
+    restart: always
+    #command: --default-authentication-plugin=mysql_native_password    
+    ports:
+      - 3306:3306
+    environment: 
+      - MYSQL_ROOT_PASSWORD=Manolo13
+      - MYSQL_DATABASE=lamp_db
+      - MYSQL_USER=mgldelgado
+      - MYSQL_PASSWORD=Manolo13
+    volumes:
+      - sql_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d 
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=mariadb
+    depends_on: 
+      - mariadb
+
+  node-red:
+    image: nodered/node-red:latest
+    restart: always
+    environment:
+      - TZ=Atlantic/Canary
+    ports:
+      - 1880:1880
+    volumes:
+      - node-red-data:/data
+    depends_on:
+      - mosquitto
+      - mariadb
+  
+  mosquitto:
+    image: eclipse-mosquitto:2.0.7
+    restart: always
+    ports: 
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf 
+      - ./mosquitto/data:/mosquitto/data 
+      - ./mosquitto/log:/mosquitto/log 
+
+
+volumes:
+  sql_data:
+  node-red-data:
